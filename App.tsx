@@ -6,21 +6,23 @@
  */
 
 import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
+import { StyleSheet, useColorScheme, View, Text } from 'react-native';
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
+import Header from './components/navigation/header';
+import NavBar from './components/navigation/navBar';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
 
   return (
-    <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
-    </SafeAreaProvider>
-  );
+    <View style={styles.container}>
+      <NavBar />
+      <Header />
+    </View>
+  )
 }
 
 function AppContent() {

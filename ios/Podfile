@@ -1,9 +1,10 @@
-# Resolve react_native_pods.rb with node to allow for hoisting
 require Pod::Executable.execute_command('node', ['-p',
   'require.resolve(
     "react-native/scripts/react_native_pods.rb",
     {paths: [process.argv[1]]},
   )', __dir__]).strip
+
+$RNFirebaseDisableSPM = true
 
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
@@ -17,9 +18,17 @@ end
 target 'calendar' do
   config = use_native_modules!
 
+  pod 'FirebaseCore', :modular_headers => true
+  pod 'FirebaseAuth', :modular_headers => true
+  pod 'FirebaseCoreInternal', :modular_headers => true
+  pod 'FirebaseCoreExtension', :modular_headers => true
+  pod 'GoogleUtilities', :modular_headers => true
+  pod 'RecaptchaInterop', :modular_headers => true
+  pod 'FirebaseAppCheckInterop', :modular_headers => true
+  pod 'FirebaseAuthInterop', :modular_headers => true
+
   use_react_native!(
     :path => config[:reactNativePath],
-    # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
@@ -28,7 +37,19 @@ target 'calendar' do
       installer,
       config[:reactNativePath],
       :mac_catalyst_enabled => false,
-      # :ccache_enabled => true
     )
+
+    installer.pods_project.targets.each do |t|
+      t.build_configurations.each do |c|
+        c.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+      end
+
+      if ['FirebaseAuth','FirebaseCore','FirebaseCoreInternal','FirebaseAuthInterop', 'FirebaseAppCheckInterop','FirebaseCoreExtension','GoogleUtilities','RecaptchaInterop'].include?(t.name)
+        t.build_configurations.each do |c|
+          c.build_settings['CLANG_ENABLE_MODULES'] = 'YES'
+          c.build_settings['DEFINES_MODULE'] = 'YES'
+        end
+      end
+    end
   end
 end
