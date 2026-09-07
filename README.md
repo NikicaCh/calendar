@@ -1,97 +1,119 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Calendar
 
-# Getting Started
+A bare React Native (no Expo) calendar app with Firebase email/password authentication, biometric (Face ID/Touch ID) app-lock, a hand-built month/day calendar, and event creation/editing backed by Firestore.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## Features
 
-## Step 1: Start Metro
+- Sign up / sign in with email and password (Firebase Authentication), with client-side field validation
+- Biometric (Face ID/Touch ID) unlock for returning signed-in users, backed by the iOS Keychain (no password is ever stored — only a biometry-gated session flag)
+- Custom-built calendar UI (no third-party calendar library) with a Month/Day view toggle
+- Create and edit events for any selected day, persisted to Cloud Firestore in real time
+- Profile screen (auth-gated) with sign out
+- Routing via React Navigation, with a back button that only appears when not on the root screen
+- Correct layout across notch / Dynamic Island / home-indicator variants via `react-native-safe-area-context`
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## Tech stack
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+- React Native **0.87.1** (bare workflow, no Expo)
+- TypeScript **~6.0**
+- React **19.2**
+- `@react-native-firebase/app`, `/auth`, `/firestore` **^26.4.0**
+- `@react-navigation/native` + `native-stack` **^7.x**
+- `react-native-keychain` **^10.0.0**
+- `react-native-safe-area-context`, `react-native-screens`
+- Jest + `react-test-renderer` for unit tests
 
-```sh
-# Using npm
-npm start
+## Required software versions
 
-# OR using Yarn
-yarn start
+Verified with the following on this machine — other reasonably recent versions will likely work, but these are the exact versions this project was built and tested against:
+
+| Tool | Version |
+|---|---|
+| Node.js | v24.14.0 (project requires `>= 22.11.0`, see `engines` in `package.json`) |
+| npm | 11.9.0 |
+| Ruby | 4.0.6 |
+| CocoaPods | 1.17.0 |
+| Xcode | 26.6 (Build 17F113) |
+| iOS deployment target | 15.1 |
+
+**Important:** CocoaPods requires a UTF-8 locale. If `pod install` fails with a `unicode_normalize` / encoding error, export these first:
+```bash
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
 ```
 
-## Step 2: Build and run your app
+## Firebase setup
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+This app needs its own Firebase project (Spark/free plan is enough).
 
-### Android
+1. Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com), and register an iOS app with bundle ID `org.reactjs.native.example.calendar` (and/or an Android app with package name `com.calendar`).
+2. Download `GoogleService-Info.plist` and place it at `ios/calendar/GoogleService-Info.plist` (already added to the Xcode target in this repo).
+3. For Android, download `google-services.json` and place it at `android/app/google-services.json` (already present in this repo, registered for package `com.calendar`). The Google Services Gradle plugin is wired up in `android/build.gradle` / `android/app/build.gradle`. **Note:** Android has not actually been built or run — there is no Android SDK on the machine this was developed on, only iOS has been verified end-to-end.
+4. In **Authentication → Sign-in method**, enable **Email/Password**.
+5. In **Build → Firestore Database**, click **Create database** (production mode is fine — a database does not exist by default, and the app will fail with a "database does not exist" error until this step is done).
+6. In Firestore's **Rules** tab, publish:
+   ```
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /events/{eventId} {
+         allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.uid;
+         allow create: if request.auth != null && request.auth.uid == request.resource.data.uid;
+       }
+     }
+   }
+   ```
 
-```sh
-# Using npm
-npm run android
+## Getting started
 
-# OR using Yarn
-yarn android
+Install JS dependencies:
+```bash
+npm install
 ```
 
 ### iOS
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
+```bash
+cd ios
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+USE_FRAMEWORKS=static pod install
+cd ..
 npm run ios
-
-# OR using Yarn
-yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+### Android
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+`google-services.json` and the Gradle plugin wiring are already in place (see Firebase setup step 3 above), but this has not been built or run — requires an installed Android SDK/emulator to verify.
+```bash
+npm run android
+```
 
-## Step 3: Modify your app
+## Testing biometric unlock
 
-Now that you have successfully run the app, let's make changes!
+Face ID needs to be enrolled in the iOS Simulator first: **Simulator menu → Features → Face ID → Enrolled**. Then sign in once (this establishes the biometric session), background and re-open the app, and approve via **Simulator menu → Features → Face ID → Matching Face**.
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+## Running tests
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+```bash
+npm test
+```
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+Runs the Jest unit test suite (calendar date math, auth field validation, the Firestore events hook, and the biometric gate hook — Firebase and Keychain native modules are mocked under `__mocks__/`).
 
-## Congratulations! :tada:
+## Project structure
 
-You've successfully run and modified your React Native App. :partying_face:
+```
+App.tsx                          # auth gate → biometric gate → navigation root
+components/
+  auth/                          # sign in/up screen, validation, biometric session helpers
+  navigation/                    # Header, NavBar, route types, header navigation hook
+  dashboard/                     # Calendar screen + CalendarGrid / DayView / EventList / EventForm
+  profile/                       # Profile screen (sign out)
+```
 
-### Now what?
+## Screenshots
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+| Sign in | Calendar — Month | Calendar — Day |
+|---|---|---|
+| ![Sign in](screenshots/sign-in.png) | ![Month view](screenshots/calendar-month.png) | ![Day view](screenshots/calendar-day.png) |

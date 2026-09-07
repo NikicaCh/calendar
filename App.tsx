@@ -5,36 +5,66 @@
  * @format
  */
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StyleSheet, useColorScheme, View, Text } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
-import Header from './components/navigation/header';
-import NavBar from './components/navigation/navBar';
+import { useEffect, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { getAuth, onAuthStateChanged, type User } from '@react-native-firebase/auth';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import Header from './components/navigation/Header';
+import NavBar from './components/navigation/NavBar';
+import AuthScreen from './components/auth/AuthScreen';
+import BiometricLockScreen from './components/auth/BiometricLockScreen';
+import useBiometricGate from './components/auth/useBiometricGate';
+import Calendar from './components/dashboard/Calendar';
+import Profile from './components/profile/Profile';
+import type { RootStackParamList } from './components/navigation/types';
 
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
+function Authenticated() {
+  const { checking, locked, unlock } = useBiometricGate();
+
+  if (checking) {
+    return null;
+  }
+
+  if (locked) {
+    return <BiometricLockScreen onUnlock={unlock} />;
+  }
 
   return (
-    <View style={styles.container}>
-      <NavBar />
-      <Header />
-    </View>
-  )
+    <NavigationContainer>
+      <View style={styles.container}>
+        <NavBar />
+        <Stack.Navigator screenOptions={{ header: () => <Header /> }}>
+          <Stack.Screen name="Dashboard" component={Calendar} />
+          <Stack.Screen name="Profile" component={Profile} />
+        </Stack.Navigator>
+      </View>
+    </NavigationContainer>
+  );
 }
 
-function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
+function App() {
+  const [initializing, setInitializing] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    return onAuthStateChanged(getAuth(), authUser => {
+      setUser(authUser);
+      setInitializing(false);
+    });
+  }, []);
+
+  if (initializing) {
+    return null;
+  }
 
   return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
-    </View>
+    <SafeAreaProvider>
+      {!user ? <AuthScreen /> : <Authenticated />}
+    </SafeAreaProvider>
   );
 }
 

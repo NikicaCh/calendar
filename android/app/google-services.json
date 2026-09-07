@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1016888487178",
+    "project_id": "calendar-81916",
+    "storage_bucket": "calendar-81916.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1016888487178:android:ab913afaae1f85da57def3",
+        "android_client_info": {
+          "package_name": "com.calendar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDqxHt8q9WmQmJge-I3dczQGJjgdxmxmI0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
